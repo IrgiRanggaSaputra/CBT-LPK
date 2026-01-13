@@ -247,7 +247,16 @@ class ApiService {
           .timeout(AppConstants.apiTimeout);
 
       final data = _handleResponse(res);
-      return data['tests'] ?? [];
+      // data bisa berupa Map dengan key 'tests' atau langsung List
+      if (data is List) {
+        return data;
+      } else if (data is Map) {
+        final tests = data['tests'];
+        if (tests is List) {
+          return tests;
+        }
+      }
+      return [];
     } catch (e) {
       print('ERROR in getTests: $e');
       rethrow;
@@ -257,7 +266,7 @@ class ApiService {
   /// Get detail tes
   Future<Map<String, dynamic>> getTestDetail(String jadwalId) async {
     final url =
-        "${AppConstants.testUrl}?action=detail&peserta_id=${LocalService.userId}&jadwal_id=$jadwalId";
+        "${AppConstants.testUrl}?action=detail&peserta_id=${LocalService.userId}&id_jadwal=$jadwalId";
     print('API Call: $url');
 
     try {
@@ -285,7 +294,7 @@ class ApiService {
             headers: _getHeaders(),
             body: jsonEncode({
               'peserta_id': LocalService.userId,
-              'jadwal_id': jadwalId,
+              'id_jadwal': jadwalId,
             }),
           )
           .timeout(AppConstants.apiTimeout);
@@ -300,7 +309,7 @@ class ApiService {
   /// Get semua soal untuk tes
   Future<List<dynamic>> getQuestions(String jadwalId) async {
     final url =
-        "${AppConstants.testUrl}?action=questions&peserta_id=${LocalService.userId}&jadwal_id=$jadwalId";
+        "${AppConstants.testUrl}?action=questions&peserta_id=${LocalService.userId}&id_jadwal=$jadwalId";
     print('API Call: $url');
 
     try {
@@ -335,8 +344,8 @@ class ApiService {
             headers: _getHeaders(),
             body: jsonEncode({
               'peserta_id': LocalService.userId,
-              'jadwal_id': jadwalId,
-              'soal_id': soalId,
+              'id_jadwal': jadwalId,
+              'id_soal': soalId,
               'jawaban': jawaban,
             }),
           )
@@ -365,7 +374,7 @@ class ApiService {
             headers: _getHeaders(),
             body: jsonEncode({
               'peserta_id': LocalService.userId,
-              'jadwal_id': jadwalId,
+              'id_jadwal': jadwalId,
               'answers': answers,
             }),
           )
@@ -391,7 +400,7 @@ class ApiService {
             headers: _getHeaders(),
             body: jsonEncode({
               'peserta_id': LocalService.userId,
-              'jadwal_id': jadwalId,
+              'id_jadwal': jadwalId,
             }),
           )
           .timeout(AppConstants.apiTimeout);
@@ -406,9 +415,9 @@ class ApiService {
   // ==================== HASIL ====================
 
   /// Get hasil tes
-  Future<Map<String, dynamic>> getTestResult(String jadwalId) async {
+  Future<Map<String, dynamic>> getTestResult(String pesertaTesId) async {
     final url =
-        "${AppConstants.hasilUrl}?action=get&peserta_id=${LocalService.userId}&jadwal_id=$jadwalId";
+        "${AppConstants.hasilUrl}?action=get&peserta_id=${LocalService.userId}&id_peserta_tes=$pesertaTesId";
     print('API Call: $url');
 
     try {
@@ -424,9 +433,9 @@ class ApiService {
   }
 
   /// Get detail hasil tes (dengan jawaban)
-  Future<Map<String, dynamic>> getTestResultDetail(String jadwalId) async {
+  Future<Map<String, dynamic>> getTestResultDetail(String pesertaTesId) async {
     final url =
-        "${AppConstants.hasilUrl}?action=detail&peserta_id=${LocalService.userId}&jadwal_id=$jadwalId";
+        "${AppConstants.hasilUrl}?action=detail&peserta_id=${LocalService.userId}&id_peserta_tes=$pesertaTesId";
     print('API Call: $url');
 
     try {

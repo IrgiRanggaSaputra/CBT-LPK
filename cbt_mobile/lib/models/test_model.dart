@@ -31,18 +31,28 @@ class TestModel {
 
   factory TestModel.fromJson(Map<String, dynamic> json) {
     return TestModel(
-      id: json['jadwal_id']?.toString() ?? json['id']?.toString() ?? '',
+      id:
+          json['id_jadwal']?.toString() ??
+          json['jadwal_id']?.toString() ??
+          json['id']?.toString() ??
+          '',
       title: json['nama_tes'] ?? json['title'] ?? '',
-      description: json['deskripsi'] ?? json['description'],
+      description: json['deskripsi'] ?? json['description'] ?? json['kategori'],
       jumlahSoal: int.tryParse(json['jumlah_soal']?.toString() ?? ''),
       durasi: int.tryParse(json['durasi']?.toString() ?? ''),
-      status: json['status'],
+      status: json['status_tes'] ?? json['status'],
       tanggalMulai: json['tanggal_mulai'],
       tanggalSelesai: json['tanggal_selesai'],
       waktuMulai: json['waktu_mulai'],
       waktuSelesai: json['waktu_selesai'],
-      isStarted: json['is_started'] == true || json['is_started'] == 1,
-      isFinished: json['is_finished'] == true || json['is_finished'] == 1,
+      isStarted:
+          json['is_started'] == true ||
+          json['is_started'] == 1 ||
+          json['status_tes'] == 'berlangsung',
+      isFinished:
+          json['is_finished'] == true ||
+          json['is_finished'] == 1 ||
+          json['status_tes'] == 'selesai',
       nilai: int.tryParse(json['nilai']?.toString() ?? ''),
     );
   }
