@@ -1,9 +1,35 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../core/constants.dart';
 import 'local_service.dart';
 
 class ApiService {
+  static const int _maxRetries = 3;
+  static const Duration _retryDelay = Duration(seconds: 2);
+
+  // Helper untuk request dengan retry
+  Future<http.Response> _requestWithRetry(
+    Future<http.Response> Function() requestFn, {
+    int maxRetries = _maxRetries,
+  }) async {
+    int attempts = 0;
+    while (true) {
+      attempts++;
+      try {
+        return await requestFn();
+      } on SocketException catch (e) {
+        print('SocketException attempt $attempts/$maxRetries: $e');
+        if (attempts >= maxRetries) rethrow;
+        await Future.delayed(_retryDelay);
+      } on http.ClientException catch (e) {
+        print('ClientException attempt $attempts/$maxRetries: $e');
+        if (attempts >= maxRetries) rethrow;
+        await Future.delayed(_retryDelay);
+      }
+    }
+  }
+
   // Helper untuk membuat headers dengan token
   Map<String, String> _getHeaders({bool withAuth = true}) {
     final headers = <String, String>{
@@ -298,9 +324,11 @@ class ApiService {
     print('API Call: $url');
 
     try {
-      final res = await http
-          .get(Uri.parse(url), headers: _getHeaders())
-          .timeout(AppConstants.apiTimeout);
+      final res = await _requestWithRetry(
+        () => http
+            .get(Uri.parse(url), headers: _getHeaders())
+            .timeout(AppConstants.apiTimeout),
+      );
 
       return _handleResponse(res);
     } catch (e) {
@@ -316,16 +344,18 @@ class ApiService {
     print('API Call: $url');
 
     try {
-      final res = await http
-          .post(
-            Uri.parse(url),
-            headers: _getHeaders(),
-            body: jsonEncode({
-              'peserta_id': LocalService.userId,
-              'id_jadwal': jadwalId,
-            }),
-          )
-          .timeout(AppConstants.apiTimeout);
+      final res = await _requestWithRetry(
+        () => http
+            .post(
+              Uri.parse(url),
+              headers: _getHeaders(),
+              body: jsonEncode({
+                'peserta_id': LocalService.userId,
+                'id_jadwal': jadwalId,
+              }),
+            )
+            .timeout(AppConstants.apiTimeout),
+      );
 
       return _handleResponse(res);
     } catch (e) {
