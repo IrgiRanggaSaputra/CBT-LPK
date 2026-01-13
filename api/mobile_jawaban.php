@@ -77,6 +77,19 @@ function saveAnswer($peserta_id) {
     $id_soal_tes = (int)$input['id_soal_tes'];
     $jawaban = sanitizeInput($input['jawaban']);
     
+    // Convert id_soal_tes to id_soal (the actual soal ID from bank_soal)
+    $soalQuery = "SELECT id_soal FROM soal_tes WHERE id_soal_tes = ? LIMIT 1";
+    $stmt = $conn->prepare($soalQuery);
+    $stmt->bind_param('i', $id_soal_tes);
+    $stmt->execute();
+    $soalResult = $stmt->get_result();
+    
+    if ($soalResult->num_rows === 0) {
+        sendError('Soal tidak ditemukan', 'NOT_FOUND', 404);
+    }
+    
+    $id_soal = (int)$soalResult->fetch_assoc()['id_soal'];
+    
     // Verify peserta_tes belongs to peserta and check status
     $verifyQuery = "
         SELECT id_peserta_tes, status_tes FROM peserta_tes
@@ -100,15 +113,15 @@ function saveAnswer($peserta_id) {
         sendError('Tidak dapat menyimpan jawaban - tes sudah selesai', 'TEST_COMPLETED', 400);
     }
     
-    // Check if answer already exists
+    // Check if answer already exists (use id_soal, not id_soal_tes)
     $checkQuery = "
         SELECT id_jawaban FROM jawaban_peserta
-        WHERE id_peserta_tes = ? AND id_soal_tes = ?
+        WHERE id_peserta_tes = ? AND id_soal = ?
         LIMIT 1
     ";
     
     $stmt = $conn->prepare($checkQuery);
-    $stmt->bind_param('ii', $id_peserta_tes, $id_soal_tes);
+    $stmt->bind_param('ii', $id_peserta_tes, $id_soal);
     $stmt->execute();
     $checkResult = $stmt->get_result();
     
@@ -116,12 +129,12 @@ function saveAnswer($peserta_id) {
         // Update existing answer
         $updateQuery = "
             UPDATE jawaban_peserta
-            SET jawaban = ?, waktu_submit = NOW()
-            WHERE id_peserta_tes = ? AND id_soal_tes = ?
+            SET jawaban = ?, waktu_jawab = NOW()
+            WHERE id_peserta_tes = ? AND id_soal = ?
         ";
         
         $stmt = $conn->prepare($updateQuery);
-        $stmt->bind_param('sii', $jawaban, $id_peserta_tes, $id_soal_tes);
+        $stmt->bind_param('sii', $jawaban, $id_peserta_tes, $id_soal);
         
         if ($stmt->execute()) {
             sendSuccess('Jawaban tersimpan', [
@@ -129,18 +142,18 @@ function saveAnswer($peserta_id) {
                 'timestamp' => date('Y-m-d H:i:s')
             ]);
         } else {
-            sendError('Gagal menyimpan jawaban', 'DB_ERROR', 500);
+            sendError('Gagal menyimpan jawaban: ' . $conn->error, 'DB_ERROR', 500);
         }
     } else {
-        // Insert new answer
+        // Insert new answer (use id_soal, not id_soal_tes)
         $insertQuery = "
             INSERT INTO jawaban_peserta 
-            (id_peserta_tes, id_soal_tes, jawaban, waktu_submit)
+            (id_peserta_tes, id_soal, jawaban, waktu_jawab)
             VALUES (?, ?, ?, NOW())
         ";
         
         $stmt = $conn->prepare($insertQuery);
-        $stmt->bind_param('iis', $id_peserta_tes, $id_soal_tes, $jawaban);
+        $stmt->bind_param('iis', $id_peserta_tes, $id_soal, $jawaban);
         
         if ($stmt->execute()) {
             sendSuccess('Jawaban tersimpan', [
@@ -148,7 +161,7 @@ function saveAnswer($peserta_id) {
                 'timestamp' => date('Y-m-d H:i:s')
             ], 201);
         } else {
-            sendError('Gagal menyimpan jawaban', 'DB_ERROR', 500);
+            sendError('Gagal menyimpan jawaban: ' . $conn->error, 'DB_ERROR', 500);
         }
     }
 }
@@ -196,14 +209,27 @@ function saveAnswerBatch($peserta_id) {
             $id_soal_tes = (int)$answer['id_soal_tes'];
             $jawabanText = sanitizeInput($answer['jawaban']);
             
-            // Check if answer exists
+            // Convert id_soal_tes to id_soal
+            $soalQuery = "SELECT id_soal FROM soal_tes WHERE id_soal_tes = ? LIMIT 1";
+            $stmt = $conn->prepare($soalQuery);
+            $stmt->bind_param('i', $id_soal_tes);
+            $stmt->execute();
+            $soalResult = $stmt->get_result();
+            
+            if ($soalResult->num_rows === 0) {
+                continue; // Skip invalid soal
+            }
+            
+            $id_soal = (int)$soalResult->fetch_assoc()['id_soal'];
+            
+            // Check if answer exists (use id_soal)
             $checkQuery = "
                 SELECT id_jawaban FROM jawaban_peserta
-                WHERE id_peserta_tes = ? AND id_soal_tes = ?
+                WHERE id_peserta_tes = ? AND id_soal = ?
             ";
             
             $stmt = $conn->prepare($checkQuery);
-            $stmt->bind_param('ii', $id_peserta_tes, $id_soal_tes);
+            $stmt->bind_param('ii', $id_peserta_tes, $id_soal);
             $stmt->execute();
             $checkResult = $stmt->get_result();
             
@@ -211,23 +237,23 @@ function saveAnswerBatch($peserta_id) {
                 // Update
                 $updateQuery = "
                     UPDATE jawaban_peserta
-                    SET jawaban = ?, waktu_submit = NOW()
-                    WHERE id_peserta_tes = ? AND id_soal_tes = ?
+                    SET jawaban = ?, waktu_jawab = NOW()
+                    WHERE id_peserta_tes = ? AND id_soal = ?
                 ";
                 
                 $stmt = $conn->prepare($updateQuery);
-                $stmt->bind_param('sii', $jawabanText, $id_peserta_tes, $id_soal_tes);
+                $stmt->bind_param('sii', $jawabanText, $id_peserta_tes, $id_soal);
                 $stmt->execute();
             } else {
-                // Insert
+                // Insert (use id_soal)
                 $insertQuery = "
                     INSERT INTO jawaban_peserta 
-                    (id_peserta_tes, id_soal_tes, jawaban, waktu_submit)
+                    (id_peserta_tes, id_soal, jawaban, waktu_jawab)
                     VALUES (?, ?, ?, NOW())
                 ";
                 
                 $stmt = $conn->prepare($insertQuery);
-                $stmt->bind_param('iis', $id_peserta_tes, $id_soal_tes, $jawabanText);
+                $stmt->bind_param('iis', $id_peserta_tes, $id_soal, $jawabanText);
                 $stmt->execute();
             }
         }
@@ -236,7 +262,7 @@ function saveAnswerBatch($peserta_id) {
         sendSuccess('Jawaban berhasil disimpan');
     } catch (Exception $e) {
         $conn->rollback();
-        sendError('Gagal menyimpan jawaban batch', 'DB_ERROR', 500);
+        sendError('Gagal menyimpan jawaban batch: ' . $e->getMessage(), 'DB_ERROR', 500);
     }
 }
 
@@ -278,12 +304,13 @@ function submitTest($peserta_id) {
         // Calculate stats from existing data
         $id_jadwal = (int)$testData['id_jadwal'];
         
+        // Use id_soal to join with jawaban_peserta (not id_soal_tes)
         $statsQuery = "
             SELECT 
-                COUNT(DISTINCT jp.id_soal_tes) as total_jawab,
+                COUNT(DISTINCT jp.id_soal) as total_jawab,
                 COUNT(DISTINCT st.id_soal_tes) as total_soal
             FROM soal_tes st
-            LEFT JOIN jawaban_peserta jp ON st.id_soal_tes = jp.id_soal_tes 
+            LEFT JOIN jawaban_peserta jp ON st.id_soal = jp.id_soal 
                 AND jp.id_peserta_tes = ?
             WHERE st.id_jadwal = ?
         ";
@@ -329,14 +356,14 @@ function submitTest($peserta_id) {
         sendError('Gagal submit tes', 'DB_ERROR', 500);
     }
     
-    // Calculate score
+    // Calculate score (use id_soal to join with jawaban_peserta)
     $scoreQuery = "
         SELECT 
-            COUNT(DISTINCT jp.id_soal_tes) as total_jawab,
+            COUNT(DISTINCT jp.id_soal) as total_jawab,
             SUM(CASE WHEN jp.jawaban = bs.jawaban_benar THEN 1 ELSE 0 END) as benar,
             COUNT(DISTINCT st.id_soal_tes) as total_soal
         FROM soal_tes st
-        LEFT JOIN jawaban_peserta jp ON st.id_soal_tes = jp.id_soal_tes 
+        LEFT JOIN jawaban_peserta jp ON st.id_soal = jp.id_soal 
             AND jp.id_peserta_tes = ?
         LEFT JOIN bank_soal bs ON st.id_soal = bs.id_soal
         WHERE st.id_jadwal = ?

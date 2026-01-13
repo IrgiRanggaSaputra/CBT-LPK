@@ -285,26 +285,48 @@ function startTest($peserta_id) {
     $stmt = $conn->prepare($checkSoalQuery);
     $stmt->bind_param('i', $id_jadwal);
     $stmt->execute();
-    $soalCount = $stmt->get_result()->fetch_assoc()['total'];
+    $soalCount = (int)$stmt->get_result()->fetch_assoc()['total'];
     
-    // Auto-populate soal_tes if empty
-    if ($soalCount == 0) {
-        $id_kategori = $test['id_kategori'];
-        $jumlah_soal = (int)$test['jumlah_soal'];
+    $id_kategori = $test['id_kategori'];
+    $jumlah_soal = (int)$test['jumlah_soal'];
+    
+    // Auto-populate or update soal_tes if empty or if count is less than required
+    if ($soalCount < $jumlah_soal) {
+        // Get existing soal IDs in soal_tes for this jadwal
+        $existingSoalQuery = "SELECT id_soal FROM soal_tes WHERE id_jadwal = ?";
+        $stmt = $conn->prepare($existingSoalQuery);
+        $stmt->bind_param('i', $id_jadwal);
+        $stmt->execute();
+        $existingResult = $stmt->get_result();
         
-        // Get random questions from bank_soal based on kategori
+        $existingSoalIds = [];
+        while ($row = $existingResult->fetch_assoc()) {
+            $existingSoalIds[] = (int)$row['id_soal'];
+        }
+        
+        // Calculate how many more questions needed
+        $neededCount = $jumlah_soal - $soalCount;
+        
+        // Get more random questions from bank_soal that are not already in soal_tes
+        $excludeIds = !empty($existingSoalIds) ? implode(',', $existingSoalIds) : '0';
         $randomSoalQuery = "
             SELECT id_soal FROM bank_soal 
-            WHERE id_kategori = ? 
+            WHERE id_kategori = ? AND id_soal NOT IN ($excludeIds)
             ORDER BY RAND() 
             LIMIT ?
         ";
         $stmt = $conn->prepare($randomSoalQuery);
-        $stmt->bind_param('ii', $id_kategori, $jumlah_soal);
+        $stmt->bind_param('ii', $id_kategori, $neededCount);
         $stmt->execute();
         $randomResult = $stmt->get_result();
         
-        $nomor_urut = 1;
+        // Get the current max nomor_urut
+        $maxNomorQuery = "SELECT COALESCE(MAX(nomor_urut), 0) as max_nomor FROM soal_tes WHERE id_jadwal = ?";
+        $stmt = $conn->prepare($maxNomorQuery);
+        $stmt->bind_param('i', $id_jadwal);
+        $stmt->execute();
+        $nomor_urut = (int)$stmt->get_result()->fetch_assoc()['max_nomor'] + 1;
+        
         while ($soal = $randomResult->fetch_assoc()) {
             $insertSoalQuery = "INSERT INTO soal_tes (id_jadwal, id_soal, nomor_urut) VALUES (?, ?, ?)";
             $stmtInsert = $conn->prepare($insertSoalQuery);
