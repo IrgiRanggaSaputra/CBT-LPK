@@ -77,20 +77,27 @@ function saveAnswer($peserta_id) {
     $id_soal_tes = (int)$input['id_soal_tes'];
     $jawaban = sanitizeInput($input['jawaban']);
     
-    // Verify peserta_tes belongs to peserta
+    // Verify peserta_tes belongs to peserta and check status
     $verifyQuery = "
-        SELECT id_peserta_tes FROM peserta_tes
+        SELECT id_peserta_tes, status_tes FROM peserta_tes
         WHERE id_peserta_tes = ? AND id_peserta = ?
-        AND status_tes = 'sedang_tes'
         LIMIT 1
     ";
     
     $stmt = $conn->prepare($verifyQuery);
     $stmt->bind_param('ii', $id_peserta_tes, $peserta_id);
     $stmt->execute();
+    $result = $stmt->get_result();
     
-    if ($stmt->get_result()->num_rows === 0) {
-        sendError('Tes tidak valid', 'NOT_FOUND', 404);
+    if ($result->num_rows === 0) {
+        sendError('Data tes tidak ditemukan', 'NOT_FOUND', 404);
+    }
+    
+    $tesData = $result->fetch_assoc();
+    
+    // Allow saving answers only during test
+    if ($tesData['status_tes'] !== 'sedang_tes') {
+        sendError('Tidak dapat menyimpan jawaban - tes sudah selesai', 'TEST_COMPLETED', 400);
     }
     
     // Check if answer already exists
@@ -159,20 +166,26 @@ function saveAnswerBatch($peserta_id) {
     $id_peserta_tes = (int)$input['id_peserta_tes'];
     $jawaban = $input['jawaban']; // Array of answers
     
-    // Verify peserta_tes
+    // Verify peserta_tes and check status
     $verifyQuery = "
-        SELECT id_peserta_tes FROM peserta_tes
+        SELECT id_peserta_tes, status_tes FROM peserta_tes
         WHERE id_peserta_tes = ? AND id_peserta = ?
-        AND status_tes = 'sedang_tes'
         LIMIT 1
     ";
     
     $stmt = $conn->prepare($verifyQuery);
     $stmt->bind_param('ii', $id_peserta_tes, $peserta_id);
     $stmt->execute();
+    $result = $stmt->get_result();
     
-    if ($stmt->get_result()->num_rows === 0) {
-        sendError('Tes tidak valid', 'NOT_FOUND', 404);
+    if ($result->num_rows === 0) {
+        sendError('Data tes tidak ditemukan', 'NOT_FOUND', 404);
+    }
+    
+    $tesData = $result->fetch_assoc();
+    
+    if ($tesData['status_tes'] !== 'sedang_tes') {
+        sendError('Tidak dapat menyimpan jawaban - tes sudah selesai', 'TEST_COMPLETED', 400);
     }
     
     // Start transaction
