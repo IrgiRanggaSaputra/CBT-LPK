@@ -290,10 +290,13 @@ class _InstructionScreenState extends State<InstructionScreen> {
       // Buat test baru dengan pesertaTesId
       final testWithPesertaTesId = test!.copyWithPesertaTesId(pesertaTesId);
 
+      // Ambil soal dari response startTest jika ada
+      final soalFromResponse = response['soal'] as List? ?? [];
+
       Navigator.pushReplacementNamed(
         context,
         Routes.test,
-        arguments: testWithPesertaTesId,
+        arguments: {'test': testWithPesertaTesId, 'soal': soalFromResponse},
       );
     } catch (e) {
       if (!mounted) return;

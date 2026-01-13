@@ -17,6 +17,7 @@ class _TestScreenState extends State<TestScreen> {
 
   TestModel? test;
   List<QuestionModel> questions = [];
+  List<dynamic>? initialSoal; // Soal dari startTest response
   int currentIndex = 0;
   Map<String, String> answers = {}; // soal_id -> jawaban
 
@@ -31,11 +32,26 @@ class _TestScreenState extends State<TestScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is TestModel && test == null) {
-      test = args;
+
+    if (test != null) return; // Already initialized
+
+    if (args is Map) {
+      // New format: {test: TestModel, soal: List}
+      if (args.containsKey('test')) {
+        final testData = args['test'];
+        if (testData is TestModel) {
+          test = testData;
+        } else if (testData is Map) {
+          test = TestModel.fromJson(testData.cast<String, dynamic>());
+        }
+        initialSoal = args['soal'] as List?;
+      } else {
+        // Old format: just a Map representing TestModel
+        test = TestModel.fromJson(args.cast<String, dynamic>());
+      }
       _loadQuestions();
-    } else if (args is Map && test == null) {
-      test = TestModel.fromJson(args.cast<String, dynamic>());
+    } else if (args is TestModel) {
+      test = args;
       _loadQuestions();
     }
   }
@@ -55,13 +71,31 @@ class _TestScreenState extends State<TestScreen> {
     });
 
     try {
-      final response = await api.getQuestions(test!.pesertaTesId!);
-      if (mounted) {
-        // Ekstrak soal dari response
-        final soalList = response['soal'] as List? ?? [];
-        final jawabanTersimpan =
-            response['jawaban_tersimpan'] as Map<String, dynamic>? ?? {};
+      List<dynamic> soalList = [];
+      Map<String, dynamic> jawabanTersimpan = {};
 
+      // Coba gunakan soal dari startTest response terlebih dahulu
+      if (initialSoal != null && initialSoal!.isNotEmpty) {
+        print('Using questions from startTest response');
+        soalList = initialSoal!;
+      } else {
+        // Fallback: ambil soal dari API getQuestions
+        print('Fetching questions from API...');
+        try {
+          final response = await api.getQuestions(test!.pesertaTesId!);
+          soalList = response['soal'] as List? ?? [];
+          jawabanTersimpan =
+              response['jawaban_tersimpan'] as Map<String, dynamic>? ?? {};
+        } catch (apiError) {
+          print('API getQuestions error: $apiError');
+          // Jika API gagal dan tidak ada soal awal, tampilkan error
+          if (initialSoal == null || initialSoal!.isEmpty) {
+            throw apiError;
+          }
+        }
+      }
+
+      if (mounted) {
         setState(() {
           questions = soalList
               .map((e) => QuestionModel.fromJson(e as Map<String, dynamic>))
@@ -70,19 +104,24 @@ class _TestScreenState extends State<TestScreen> {
           // Load saved answers
           jawabanTersimpan.forEach((key, value) {
             // key adalah id_soal_tes, value adalah jawaban
-            final question = questions.firstWhere(
+            final questionIndex = questions.indexWhere(
               (q) => q.soalTesId == key || q.id == key,
-              orElse: () => questions.first,
             );
-            if (question.soalTesId == key || question.id == key) {
-              answers[question.id] = value.toString();
+            if (questionIndex >= 0) {
+              answers[questions[questionIndex].id] = value.toString();
             }
           });
 
           loading = false;
 
+          // Check if no questions
+          if (questions.isEmpty) {
+            error =
+                'Tidak ada soal untuk tes ini. Silakan hubungi administrator.';
+          }
+
           // Start timer
-          if (test?.durasi != null) {
+          if (test?.durasi != null && questions.isNotEmpty) {
             _remainingSeconds = test!.durasi! * 60;
             _startTimer();
           }
