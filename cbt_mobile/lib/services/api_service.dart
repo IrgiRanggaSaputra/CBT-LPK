@@ -21,11 +21,28 @@ class ApiService {
   // Helper untuk handle API response
   dynamic _handleResponse(http.Response response) {
     print('API Status Code: ${response.statusCode}');
-    print('API Response Body: ${response.body}');
+    print('API Response Body:');
+    print(response.body);
 
-    final decoded = jsonDecode(response.body);
+    // Handle empty response
+    if (response.body.isEmpty) {
+      throw Exception(
+        'Server mengembalikan response kosong. Silakan coba lagi.',
+      );
+    }
 
-    if (response.statusCode == 200) {
+    // Try to decode JSON
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (e) {
+      print('JSON Decode Error: $e');
+      throw Exception(
+        'Response tidak valid dari server: ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}',
+      );
+    }
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
       if (decoded['status'] == 'success') {
         final data = decoded['data'];
         // Ensure we return a Map, not null
@@ -306,10 +323,10 @@ class ApiService {
     }
   }
 
-  /// Get semua soal untuk tes
-  Future<List<dynamic>> getQuestions(String jadwalId) async {
+  /// Get semua soal untuk tes (requires id_peserta_tes from startTest)
+  Future<Map<String, dynamic>> getQuestions(String pesertaTesId) async {
     final url =
-        "${AppConstants.testUrl}?action=questions&peserta_id=${LocalService.userId}&id_jadwal=$jadwalId";
+        "${AppConstants.testUrl}?action=questions&peserta_id=${LocalService.userId}&id_peserta_tes=$pesertaTesId";
     print('API Call: $url');
 
     try {
@@ -317,8 +334,7 @@ class ApiService {
           .get(Uri.parse(url), headers: _getHeaders())
           .timeout(AppConstants.apiTimeout);
 
-      final data = _handleResponse(res);
-      return data['questions'] ?? [];
+      return _handleResponse(res);
     } catch (e) {
       print('ERROR in getQuestions: $e');
       rethrow;
@@ -329,8 +345,8 @@ class ApiService {
 
   /// Save jawaban satu soal
   Future<Map<String, dynamic>> saveAnswer({
-    required String jadwalId,
-    required String soalId,
+    required String pesertaTesId,
+    required String soalTesId,
     required String jawaban,
   }) async {
     final url =
@@ -343,9 +359,8 @@ class ApiService {
             Uri.parse(url),
             headers: _getHeaders(),
             body: jsonEncode({
-              'peserta_id': LocalService.userId,
-              'id_jadwal': jadwalId,
-              'id_soal': soalId,
+              'id_peserta_tes': pesertaTesId,
+              'id_soal_tes': soalTesId,
               'jawaban': jawaban,
             }),
           )
@@ -360,8 +375,8 @@ class ApiService {
 
   /// Save jawaban batch (multiple)
   Future<Map<String, dynamic>> saveAnswerBatch({
-    required String jadwalId,
-    required List<Map<String, dynamic>> answers,
+    required String pesertaTesId,
+    required List<Map<String, dynamic>> jawaban,
   }) async {
     final url =
         "${AppConstants.jawabanUrl}?action=save-batch&peserta_id=${LocalService.userId}";
@@ -373,9 +388,8 @@ class ApiService {
             Uri.parse(url),
             headers: _getHeaders(),
             body: jsonEncode({
-              'peserta_id': LocalService.userId,
-              'id_jadwal': jadwalId,
-              'answers': answers,
+              'id_peserta_tes': pesertaTesId,
+              'jawaban': jawaban,
             }),
           )
           .timeout(AppConstants.apiTimeout);
@@ -388,7 +402,7 @@ class ApiService {
   }
 
   /// Submit test / selesaikan tes
-  Future<Map<String, dynamic>> submitTest(String jadwalId) async {
+  Future<Map<String, dynamic>> submitTest(String pesertaTesId) async {
     final url =
         "${AppConstants.jawabanUrl}?action=submit&peserta_id=${LocalService.userId}";
     print('API Call: $url');
@@ -398,10 +412,7 @@ class ApiService {
           .post(
             Uri.parse(url),
             headers: _getHeaders(),
-            body: jsonEncode({
-              'peserta_id': LocalService.userId,
-              'id_jadwal': jadwalId,
-            }),
+            body: jsonEncode({'id_peserta_tes': pesertaTesId}),
           )
           .timeout(AppConstants.apiTimeout);
 

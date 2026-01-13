@@ -1,5 +1,6 @@
 class QuestionModel {
-  final String id;
+  final String id; // soal_id (id soal asli)
+  final String? soalTesId; // id_soal_tes (id di tabel soal_tes)
   final String question;
   final String a, b, c, d;
   final String? e; // Opsi kelima jika ada
@@ -11,6 +12,7 @@ class QuestionModel {
 
   QuestionModel({
     required this.id,
+    this.soalTesId,
     required this.question,
     required this.a,
     required this.b,
@@ -26,13 +28,19 @@ class QuestionModel {
 
   factory QuestionModel.fromJson(Map<String, dynamic> json) {
     return QuestionModel(
-      id: json['soal_id']?.toString() ?? json['id']?.toString() ?? '',
+      id:
+          json['id_soal']?.toString() ??
+          json['soal_id']?.toString() ??
+          json['id']?.toString() ??
+          '',
+      soalTesId:
+          json['id_soal_tes']?.toString() ?? json['soal_tes_id']?.toString(),
       question: json['pertanyaan'] ?? json['question'] ?? '',
-      a: json['opsi_a'] ?? json['optionA'] ?? '',
-      b: json['opsi_b'] ?? json['optionB'] ?? '',
-      c: json['opsi_c'] ?? json['optionC'] ?? '',
-      d: json['opsi_d'] ?? json['optionD'] ?? '',
-      e: json['opsi_e'] ?? json['optionE'],
+      a: json['pilihan_a'] ?? json['opsi_a'] ?? json['optionA'] ?? '',
+      b: json['pilihan_b'] ?? json['opsi_b'] ?? json['optionB'] ?? '',
+      c: json['pilihan_c'] ?? json['opsi_c'] ?? json['optionC'] ?? '',
+      d: json['pilihan_d'] ?? json['opsi_d'] ?? json['optionD'] ?? '',
+      e: json['pilihan_e'] ?? json['opsi_e'] ?? json['optionE'],
       gambar: json['gambar'],
       penjelasan: json['penjelasan'],
       jawabanBenar: json['jawaban_benar'] ?? json['correct_answer'],
@@ -44,6 +52,7 @@ class QuestionModel {
   Map<String, dynamic> toJson() {
     return {
       'soal_id': id,
+      'id_soal_tes': soalTesId,
       'pertanyaan': question,
       'opsi_a': a,
       'opsi_b': b,

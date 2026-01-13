@@ -1,5 +1,6 @@
 class TestModel {
-  final String id;
+  final String id; // id_jadwal
+  final String? pesertaTesId; // id_peserta_tes (dari startTest)
   final String title;
   final String? description;
   final int? jumlahSoal;
@@ -15,6 +16,7 @@ class TestModel {
 
   TestModel({
     required this.id,
+    this.pesertaTesId,
     required this.title,
     this.description,
     this.jumlahSoal,
@@ -36,6 +38,7 @@ class TestModel {
           json['jadwal_id']?.toString() ??
           json['id']?.toString() ??
           '',
+      pesertaTesId: json['id_peserta_tes']?.toString() ?? json['peserta_tes_id']?.toString(),
       title: json['nama_tes'] ?? json['title'] ?? '',
       description: json['deskripsi'] ?? json['description'] ?? json['kategori'],
       jumlahSoal: int.tryParse(json['jumlah_soal']?.toString() ?? ''),
@@ -60,6 +63,7 @@ class TestModel {
   Map<String, dynamic> toJson() {
     return {
       'jadwal_id': id,
+      'id_peserta_tes': pesertaTesId,
       'nama_tes': title,
       'deskripsi': description,
       'jumlah_soal': jumlahSoal,
@@ -73,6 +77,26 @@ class TestModel {
       'is_finished': isFinished,
       'nilai': nilai,
     };
+  }
+
+  /// Create a copy of TestModel with updated pesertaTesId
+  TestModel copyWithPesertaTesId(String pesertaTesId) {
+    return TestModel(
+      id: id,
+      pesertaTesId: pesertaTesId,
+      title: title,
+      description: description,
+      jumlahSoal: jumlahSoal,
+      durasi: durasi,
+      status: status,
+      tanggalMulai: tanggalMulai,
+      tanggalSelesai: tanggalSelesai,
+      waktuMulai: waktuMulai,
+      waktuSelesai: waktuSelesai,
+      isStarted: true, // Mark as started
+      isFinished: isFinished,
+      nilai: nilai,
+    );
   }
 
   /// Check apakah tes bisa dimulai

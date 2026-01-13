@@ -41,7 +41,13 @@ class _TestScreenState extends State<TestScreen> {
   }
 
   Future<void> _loadQuestions() async {
-    if (test == null) return;
+    if (test == null || test!.pesertaTesId == null) {
+      setState(() {
+        error = 'Data tes tidak valid. pesertaTesId tidak ditemukan.';
+        loading = false;
+      });
+      return;
+    }
 
     setState(() {
       loading = true;
@@ -49,10 +55,30 @@ class _TestScreenState extends State<TestScreen> {
     });
 
     try {
-      final data = await api.getQuestions(test!.id);
+      final response = await api.getQuestions(test!.pesertaTesId!);
       if (mounted) {
+        // Ekstrak soal dari response
+        final soalList = response['soal'] as List? ?? [];
+        final jawabanTersimpan =
+            response['jawaban_tersimpan'] as Map<String, dynamic>? ?? {};
+
         setState(() {
-          questions = data.map((e) => QuestionModel.fromJson(e)).toList();
+          questions = soalList
+              .map((e) => QuestionModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+
+          // Load saved answers
+          jawabanTersimpan.forEach((key, value) {
+            // key adalah id_soal_tes, value adalah jawaban
+            final question = questions.firstWhere(
+              (q) => q.soalTesId == key || q.id == key,
+              orElse: () => questions.first,
+            );
+            if (question.soalTesId == key || question.id == key) {
+              answers[question.id] = value.toString();
+            }
+          });
+
           loading = false;
 
           // Start timer
@@ -354,9 +380,15 @@ class _TestScreenState extends State<TestScreen> {
 
     // Auto-save answer
     try {
+      // Cari id_soal_tes dari question yang sedang dijawab
+      final question = questions.firstWhere(
+        (q) => q.id == questionId,
+        orElse: () => questions[currentIndex],
+      );
+
       await api.saveAnswer(
-        jadwalId: test!.id,
-        soalId: questionId,
+        pesertaTesId: test!.pesertaTesId!,
+        soalTesId: question.soalTesId ?? questionId,
         jawaban: answer,
       );
     } catch (e) {
@@ -532,13 +564,13 @@ class _TestScreenState extends State<TestScreen> {
   }
 
   Future<void> _submitTest() async {
-    if (test == null) return;
+    if (test == null || test!.pesertaTesId == null) return;
 
     setState(() => submitting = true);
 
     try {
       // Submit test
-      await api.submitTest(test!.id);
+      await api.submitTest(test!.pesertaTesId!);
 
       _timer?.cancel();
 

@@ -274,11 +274,27 @@ class _InstructionScreenState extends State<InstructionScreen> {
     setState(() => starting = true);
 
     try {
-      await api.startTest(test!.id);
+      final response = await api.startTest(test!.id);
 
       if (!mounted) return;
 
-      Navigator.pushReplacementNamed(context, Routes.test, arguments: test);
+      // Ambil id_peserta_tes dari response
+      final pesertaTesId =
+          response['id_peserta_tes']?.toString() ??
+          response['data']?['id_peserta_tes']?.toString();
+
+      if (pesertaTesId == null) {
+        throw Exception('id_peserta_tes tidak ditemukan dalam response');
+      }
+
+      // Buat test baru dengan pesertaTesId
+      final testWithPesertaTesId = test!.copyWithPesertaTesId(pesertaTesId);
+
+      Navigator.pushReplacementNamed(
+        context,
+        Routes.test,
+        arguments: testWithPesertaTesId,
+      );
     } catch (e) {
       if (!mounted) return;
 

@@ -10,9 +10,12 @@ class TestProvider {
     return data.map((e) => TestModel.fromJson(e)).toList();
   }
 
-  Future<List<QuestionModel>> fetchQuestions(String jadwalId) async {
-    final data = await _api.getQuestions(jadwalId);
-    return data.map((e) => QuestionModel.fromJson(e)).toList();
+  Future<List<QuestionModel>> fetchQuestions(String pesertaTesId) async {
+    final response = await _api.getQuestions(pesertaTesId);
+    final soalList = response['soal'] as List? ?? [];
+    return soalList
+        .map((e) => QuestionModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<Map<String, dynamic>> getTestDetail(String jadwalId) async {
@@ -23,8 +26,8 @@ class TestProvider {
     return await _api.startTest(jadwalId);
   }
 
-  Future<Map<String, dynamic>> submitTest(String jadwalId) async {
-    return await _api.submitTest(jadwalId);
+  Future<Map<String, dynamic>> submitTest(String pesertaTesId) async {
+    return await _api.submitTest(pesertaTesId);
   }
 
   Future<Map<String, dynamic>> getResult(String jadwalId) async {
