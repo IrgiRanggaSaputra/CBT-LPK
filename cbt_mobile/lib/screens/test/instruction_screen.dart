@@ -106,8 +106,15 @@ class _InstructionScreenState extends State<InstructionScreen> {
 
   Widget _buildContent() {
     final petunjuk =
-        detail?['petunjuk'] ?? 'Silakan baca instruksi sebelum memulai ujian.';
-    final canStart = test?.canStart ?? true;
+        detail?['petunjuk'] ??
+        detail?['instruksi'] ??
+        'Silakan baca instruksi sebelum memulai ujian.';
+    // Check can_start from API response, default to true
+    final canStartFromApi = detail?['can_start'];
+    final canStart =
+        canStartFromApi == true ||
+        canStartFromApi == 1 ||
+        (canStartFromApi == null && (test?.canStart ?? true));
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),

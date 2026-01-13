@@ -184,6 +184,12 @@ function getTestDetail($peserta_id) {
     
     $test = $result->fetch_assoc();
     
+    // Determine status
+    $statusTes = $test['status_tes'] ?? 'belum_mulai';
+    $isStarted = $statusTes === 'sedang_tes';
+    $isFinished = $statusTes === 'selesai';
+    $canStart = !$isFinished; // Can start if not finished
+    
     $response = [
         'id_jadwal' => (int)$test['id_jadwal'],
         'nama_tes' => $test['nama_tes'],
@@ -193,7 +199,11 @@ function getTestDetail($peserta_id) {
         'durasi' => (int)$test['durasi'],
         'jumlah_soal' => (int)$test['jumlah_soal'],
         'passing_grade' => (float)$test['passing_grade'],
-        'instruksi' => $test['instruksi'] ?? 'Baca soal dengan teliti dan jawab dengan benar'
+        'instruksi' => $test['instruksi'] ?? 'Baca soal dengan teliti dan jawab dengan benar',
+        'status_tes' => $statusTes,
+        'is_started' => $isStarted,
+        'is_finished' => $isFinished,
+        'can_start' => $canStart
     ];
     
     sendSuccess('Detail tes berhasil diambil', $response);
