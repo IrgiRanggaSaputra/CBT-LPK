@@ -188,7 +188,22 @@ function getTestDetail($peserta_id) {
     $statusTes = $test['status_tes'] ?? 'belum_mulai';
     $isStarted = $statusTes === 'sedang_tes';
     $isFinished = $statusTes === 'selesai';
-    $canStart = !$isFinished; // Can start if not finished
+    
+    // Check time constraints for can_start
+    $now = new DateTime();
+    $tanggalMulai = new DateTime($test['tanggal_mulai']);
+    $tanggalSelesai = new DateTime($test['tanggal_selesai']);
+    
+    $isWithinTimeRange = ($now >= $tanggalMulai && $now <= $tanggalSelesai);
+    $canStart = !$isFinished && $isWithinTimeRange; // Can start if not finished AND within time range
+    
+    // Status messages for debugging/user info
+    $timeStatus = null;
+    if ($now < $tanggalMulai) {
+        $timeStatus = 'Ujian belum dimulai';
+    } else if ($now > $tanggalSelesai) {
+        $timeStatus = 'Waktu ujian sudah berakhir';
+    }
     
     $response = [
         'id_jadwal' => (int)$test['id_jadwal'],
@@ -203,7 +218,8 @@ function getTestDetail($peserta_id) {
         'status_tes' => $statusTes,
         'is_started' => $isStarted,
         'is_finished' => $isFinished,
-        'can_start' => $canStart
+        'can_start' => $canStart,
+        'time_status' => $timeStatus
     ];
     
     sendSuccess('Detail tes berhasil diambil', $response);
@@ -221,25 +237,45 @@ function startTest($peserta_id) {
     
     $id_jadwal = (int)$input['id_jadwal'];
     
-    // Check if test exists and is active
-    $testQuery = "
-        SELECT id_jadwal, nama_tes, durasi, jumlah_soal, id_kategori
+    // First check if test exists at all
+    $checkTestQuery = "
+        SELECT id_jadwal, nama_tes, durasi, jumlah_soal, id_kategori, 
+               tanggal_mulai, tanggal_selesai, status
         FROM jadwal_tes
-        WHERE id_jadwal = ? AND status = 'aktif'
-        AND tanggal_mulai <= NOW() AND tanggal_selesai >= NOW()
+        WHERE id_jadwal = ?
         LIMIT 1
     ";
     
-    $stmt = $conn->prepare($testQuery);
+    $stmt = $conn->prepare($checkTestQuery);
     $stmt->bind_param('i', $id_jadwal);
     $stmt->execute();
-    $testResult = $stmt->get_result();
+    $checkResult = $stmt->get_result();
     
-    if ($testResult->num_rows === 0) {
-        sendError('Tes tidak tersedia', 'NOT_FOUND', 404);
+    if ($checkResult->num_rows === 0) {
+        sendError('Jadwal tes tidak ditemukan', 'NOT_FOUND', 404);
     }
     
-    $test = $testResult->fetch_assoc();
+    $testInfo = $checkResult->fetch_assoc();
+    
+    // Check if test is active
+    if ($testInfo['status'] !== 'aktif') {
+        sendError('Tes tidak aktif. Status saat ini: ' . $testInfo['status'], 'TEST_INACTIVE', 400);
+    }
+    
+    // Check time constraints
+    $now = new DateTime();
+    $tanggalMulai = new DateTime($testInfo['tanggal_mulai']);
+    $tanggalSelesai = new DateTime($testInfo['tanggal_selesai']);
+    
+    if ($now < $tanggalMulai) {
+        sendError('Ujian belum dimulai. Waktu mulai: ' . $testInfo['tanggal_mulai'], 'TEST_NOT_STARTED', 400);
+    }
+    
+    if ($now > $tanggalSelesai) {
+        sendError('Waktu ujian sudah berakhir. Waktu selesai: ' . $testInfo['tanggal_selesai'], 'TEST_EXPIRED', 400);
+    }
+    
+    $test = $testInfo;
     
     // Check if peserta already started this test
     $checkQuery = "

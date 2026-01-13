@@ -116,6 +116,9 @@ class _InstructionScreenState extends State<InstructionScreen> {
         canStartFromApi == 1 ||
         (canStartFromApi == null && (test?.canStart ?? true));
 
+    // Get time status message if available
+    final timeStatus = detail?['time_status'] as String?;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -252,6 +255,29 @@ class _InstructionScreenState extends State<InstructionScreen> {
                 label: const Text(
                   'Lihat Hasil',
                   style: TextStyle(fontSize: 16),
+                ),
+              ),
+            )
+          else if (timeStatus != null)
+            // Show time status message if test cannot be started due to time
+            Card(
+              color: Colors.orange.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    const Icon(Icons.access_time, color: Colors.orange),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        timeStatus,
+                        style: const TextStyle(
+                          color: Colors.orange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
