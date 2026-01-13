@@ -94,6 +94,9 @@ include 'includes/header.php';
                             <?php endif; ?>
                         </td>
                         <td>
+                            <a href="jadwal_tes_soal.php?id=<?php echo $row['id_jadwal']; ?>" class="btn btn-sm btn-success" title="Kelola Soal">
+                                <i class="bi bi-file-text"></i> Soal
+                            </a>
                             <a href="jadwal_tes_edit.php?id=<?php echo $row['id_jadwal']; ?>" class="btn btn-sm btn-warning">
                                 <i class="bi bi-pencil"></i>
                             </a>
