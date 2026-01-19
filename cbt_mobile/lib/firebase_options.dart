@@ -41,12 +41,13 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_WEB_API_KEY',
-    appId: 'YOUR_WEB_APP_ID',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-    storageBucket: 'YOUR_PROJECT_ID.appspot.com',
+    apiKey: 'AIzaSyCg9b9DBACCHumnRCgwJvOmS8FaRbZauQ',
+    authDomain: 'cbt-lpk.firebaseapp.com',
+    projectId: 'cbt-lpk',
+    storageBucket: 'cbt-lpk.appspot.com',
+    messagingSenderId: '1041673028858',
+    appId: '1:1041673028858:web:22357933f2b6bbfe19f543',
+    measurementId: 'G-L7HVKKQD8B',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
