@@ -83,7 +83,7 @@ Berikut adalah tampilan aplikasi CBT-Kiyoraka:
 
 | Login | Dashboard | Profile | Daftar Ujian | 
 |-------|----------|---------|---------|
-| ![Login](assets/images/login.jpeg) | ![Dashboard](assets/images/dashboard.jpeg) | ![Profile](assets/images/profile.jpeg) | ![Daftar Ujian](assets/images/daftar_ujian.jpegjpeg) | 
+| ![Login](assets/images/login.jpeg) | ![Dashboard](assets/images/dashboard.jpeg) | ![Profile](assets/images/profile.jpeg) | ![Daftar Ujian](assets/images/daftar_ujian.jpeg) | 
 
 | Informasi Tes | Tampilan Tes | PopUp | 
 |-------|----------|---------|
