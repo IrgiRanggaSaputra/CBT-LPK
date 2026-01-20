@@ -78,7 +78,7 @@ Berikut adalah tampilan aplikasi CBT-Kiyoraka:
 ### Demo Aplikasi (GIF)
 
 <div align="center">
-	<img src="assets/screenshots/recordAPK.gif" alt="Demo CBT Kiyoraka" width="250" />
+	<img src="assets/images/recordAPK.gif" alt="Demo CBT Kiyoraka" width="250" />
 </div>
 
 | Login | Dashboard | Profile | Daftar Ujian | 
