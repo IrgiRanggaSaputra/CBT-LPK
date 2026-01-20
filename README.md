@@ -78,12 +78,12 @@ Berikut adalah tampilan aplikasi CBT-Kiyoraka:
 ### Demo Aplikasi (GIF)
 
 <div align="center">
-	<img src="assets/screenshots/recordAPK.gif" alt="Demo CBT Kiyoraka" width="250" />
+	<img src="assets/images/recordAPK.gif" alt="Demo CBT Kiyoraka" width="250" />
 </div>
 
 | Login | Dashboard | Profile | Daftar Ujian | 
 |-------|----------|---------|---------|
-| ![Login](assets/images/login.jpeg) | ![Dashboard](assets/images/dashboard.jpeg) | ![Profile](assets/images/profile.jpeg) | ![Daftar Ujian](assets/images/daftar_ujian.jpegjpeg) | 
+| ![Login](assets/images/login.jpeg) | ![Dashboard](assets/images/dashboard.jpeg) | ![Profile](assets/images/profile.jpeg) | ![Daftar Ujian](assets/images/daftar_ujian.jpeg) | 
 
 | Informasi Tes | Tampilan Tes | PopUp | 
 |-------|----------|---------|
