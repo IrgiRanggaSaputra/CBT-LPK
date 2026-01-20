@@ -71,10 +71,31 @@ Aplikasi CBT-LPK Mobile memiliki fitur utama sebagai berikut:
 - **Integrasi Firebase**: Untuk autentikasi, database, dan notifikasi.
 
 ---
+## Screenshots
+
+Berikut adalah tampilan aplikasi CBT-Kiyoraka:
+
+### Demo Aplikasi (GIF)
+
+<div align="center">
+	<img src="assets/screenshots/recordAPK.gif" alt="Demo CBT Kiyoraka" width="250" />
+</div>
+
+| Login | Dashboard | Profile | Daftar Ujian | 
+|-------|----------|---------|---------|
+| ![Login](assets/images/login.jpeg) | ![Dashboard](assets/images/dashboard.jpeg) | ![Profile](assets/images/profile.jpeg) | ![Daftar Ujian](assets/images/daftar_ujian.jpegjpeg) | 
+
+| Informasi Tes | Tampilan Tes | PopUp | 
+|-------|----------|---------|
+| ![Informasi Tes](assets/images/informasi_tes.jpeg) | ![Tampilan Tes](assets/images/tampilan_tes.jpeg) | ![PopUP](assets/images/popup.jpeg) |  
 
 
 ## Lisensi
 IRS Project
+
+## Inforamsi Proyek
+Irgi Rangga Saputra 
+23 CNS A
 
 
 
