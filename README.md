@@ -94,7 +94,7 @@ Berikut adalah tampilan aplikasi CBT-Kiyoraka:
 IRS Project
 
 ## Inforamsi Proyek
-Irgi Rangga Saputra 
+Irgi Rangga Saputra <br>
 23 CNS A
 
 
